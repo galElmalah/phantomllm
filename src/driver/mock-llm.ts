@@ -1,7 +1,7 @@
 import { AdminClient } from "./admin.client.js";
 import { GivenStubs } from "../stubs/given.js";
 import { ExpectConditions } from "../stubs/expect.js";
-import { ContainerNotStartedError } from "../errors/lifecycle.errors.js";
+import { ServerNotStartedError } from "../errors/lifecycle.errors.js";
 import { buildApp } from "../server/app.js";
 
 type MockLLMState = "idle" | "starting" | "running" | "stopping" | "stopped";
@@ -84,7 +84,7 @@ export class MockLLM {
 
   private assertRunning(): void {
     if (this.state !== "running") {
-      throw new ContainerNotStartedError();
+      throw new ServerNotStartedError();
     }
   }
 }

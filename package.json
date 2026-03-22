@@ -1,14 +1,14 @@
 {
   "name": "phantomllm",
   "version": "1.0.0",
-  "description": "Dockerized mock server for OpenAI-compatible APIs. Test your LLM integrations with a real HTTP server.",
+  "description": "Mock server for OpenAI-compatible APIs. Test your LLM integrations with a real HTTP server.",
   "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "require": {
         "types": "./dist/index.d.cts",
@@ -17,8 +17,8 @@
     }
   },
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.cts",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
