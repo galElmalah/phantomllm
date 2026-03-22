@@ -12,6 +12,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: github.actor == 'galElmalah'
     steps:
       - uses: actions/checkout@v4
 
