@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { MockLLM } from "../../src/driver/mock-llm.js";
+import { MockLLM } from "../../src/index.js";
 import OpenAI from "openai";
 
 describe("MockLLM end-to-end (given → SDK → assert)", () => {

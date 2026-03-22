@@ -4,26 +4,22 @@ This file provides general guidance for agents working with code in this reposit
 
 ## Project Overview
 
-phantomllm is a testkit for mocking the OpenAI API in integration tests. It provides a Fastify-based mock server that runs inside Docker, a Testcontainers-based driver class for programmatic control, and ships as an npm package. Built with TypeScript (ESM-first) and tested with Vitest.
+phantomllm is a testkit for mocking the OpenAI API in integration tests. It provides an in-process Fastify mock server controlled via a `MockLLM` class with fluent stub builders. Ships as an npm package — `npm install phantomllm` and go.
 
 ## Common Commands
 
 ```bash
 # Development
-npm run build                    # Compile driver (tsup)
-npm run build:server             # Compile server (tsc)
+npm run build                    # Compile (tsup)
 
 # Testing
 npm test                         # Run all Vitest tests
-npm run test:unit                # Unit tests only (no Docker)
-npm run test:integration         # Integration tests (requires Docker)
-npm run test:sdk                 # SDK compatibility tests (requires Docker)
+npm run test:unit                # Unit tests only
+npm run test:integration         # Integration tests
+npm run test:sdk                 # SDK compatibility tests
 
 # Quality
 npm run typecheck                # Type validation (tsc --noEmit)
-
-# Docker
-npm run docker:build             # Build the mock server image
 ```
 
 ## Verification After Changes
@@ -38,9 +34,6 @@ npm run typecheck
 npm run test:unit && npm run test:integration
 
 # After changing driver or builder code
-npm run test:integration
-
-# After changing SDK compatibility
 npm run test:sdk
 
 # Full verification
@@ -58,6 +51,7 @@ npm run typecheck && npm test
 - **Do NOT put test files next to source files** — tests live in `tests/` organized by domain
 - **Do NOT use default exports** — named exports only
 - **Do NOT add comments or docstrings to code you didn't change**
+- **Do NOT import internal modules in tests** — tests must only use the public API exported from `src/index.ts` (see [Testing Rules](#testing-rules))
 
 ## Architecture
 
@@ -65,7 +59,7 @@ npm run typecheck && npm test
 
 The public API surface is intentionally small:
 
-- `MockLLM` — Testcontainers driver class (main entry point)
+- `MockLLM` — main class (start, stop, given, expect, clear)
 - Fluent stub builders (`ChatCompletionStubBuilder`, `EmbeddingStubBuilder`, `ModelsStubBuilder`)
 - Type definitions and error classes
 
@@ -73,7 +67,7 @@ The public API surface is intentionally small:
 
 ```
 src/
-├── server/           # Fastify mock server (runs inside Docker, NOT published to npm)
+├── server/           # In-process Fastify mock server
 │   ├── admin/        # /_admin control plane routes
 │   ├── chat/         # /v1/chat/completions domain
 │   ├── embeddings/   # /v1/embeddings domain
@@ -83,14 +77,14 @@ src/
 │   ├── responses/    # OpenAI response shape builders
 │   ├── plugins/      # Fastify plugins
 │   └── utils/        # ID generation, token counting
-├── driver/           # Testcontainers driver (published to npm)
-├── stubs/            # Fluent stub builders (published to npm)
-├── errors/           # Custom error classes (published to npm)
-└── types/            # Shared type definitions (published to npm)
+├── driver/           # MockLLM class
+├── stubs/            # Fluent stub builders
+├── errors/           # Custom error classes
+└── types/            # Shared type definitions
 tests/
-├── unit/             # Pure logic tests (no Docker)
-├── integration/      # Tests that spin up the container
-└── sdk/              # Tests using real OpenAI/AI SDK clients
+├── unit/             # Pure logic tests (server internals)
+├── integration/      # Server HTTP contract tests
+└── sdk/              # End-to-end tests via MockLLM + real SDKs
 ```
 
 ### Domain-Based Organization
@@ -137,13 +131,17 @@ Code is organized by **domain** (chat, embeddings, models), not by file type. Ea
 - **Constants**: UPPER_SNAKE_CASE for true constants (`DEFAULT_PORT`)
 - **Test files**: `<name>.test.ts` in the corresponding `tests/` subdomain folder
 
-### Testing
+### Testing Rules
 
-- **Vitest** for all tests
-- **Three tiers**: `unit/` (no Docker), `integration/` (Docker), `sdk/` (real SDK clients)
-- **Descriptive test names** — `it('returns a streamed chat completion with two chunks')`
-- **One assertion concept per test**
-- **Factory helpers** for test data variation
+**Integration and SDK tests must only use the public API.** This is a hard rule — it exists because we shipped a bug where the internal stub registration path was never tested, since all tests bypassed `MockLLM` and called server internals directly.
+
+- **`tests/unit/`** — may import from `src/server/` internals (testing pure functions and server logic directly)
+- **`tests/integration/`** — must interact with the server via HTTP only (using `app.inject()` or `fetch()`)
+- **`tests/sdk/`** — must use `MockLLM` from `src/index.ts` as the sole entry point. Must NOT import from `src/server/`, `src/driver/`, or `src/stubs/` directly. This tier validates the exact path end users take: `new MockLLM()` → `mock.given.*` → SDK call → assert.
+
+**Why:** If SDK tests bypass MockLLM and register stubs via raw HTTP, bugs in the driver (like the flush bug) go undetected. The SDK tier must prove the public API works end-to-end.
+
+Enforced by ESLint rule: `no-restricted-imports` blocks `src/server/`, `src/driver/`, and `src/stubs/` imports in `tests/sdk/`.
 
 ### Dependencies
 

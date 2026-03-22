@@ -1,40 +1,26 @@
-import { beforeAll, afterAll, afterEach, describe, it, expect } from "vitest";
-import { buildApp } from "../../src/server/app.js";
-import type { FastifyInstance } from "fastify";
+import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
+import { MockLLM } from "../../src/index.js";
 import OpenAI from "openai";
 
-let app: FastifyInstance;
+const mock = new MockLLM();
 let client: OpenAI;
-let baseUrl: string;
 
 beforeAll(async () => {
-  app = await buildApp({ logger: false });
-  await app.listen({ port: 0 });
-  const address = app.server.address();
-  const port = typeof address === "object" && address ? address.port : 0;
-  baseUrl = `http://127.0.0.1:${port}`;
-  client = new OpenAI({ baseURL: `${baseUrl}/v1`, apiKey: "test-key" });
+  await mock.start();
+  client = new OpenAI({ baseURL: mock.apiBaseUrl, apiKey: "test-key" });
 });
 
 afterAll(async () => {
-  await app.close();
+  await mock.stop();
 });
 
-afterEach(async () => {
-  await fetch(`${baseUrl}/_admin/stubs`, { method: "DELETE" });
-  await fetch(`${baseUrl}/_admin/requests`, { method: "DELETE" });
+beforeEach(() => {
+  mock.clear();
 });
 
 describe("OpenAI SDK - chat completions", () => {
   it("generates text with OpenAI SDK", async () => {
-    await fetch(`${baseUrl}/_admin/stubs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        matcher: { endpoint: "chat" },
-        response: { type: "chat", body: "Hello from mock server!" },
-      }),
-    });
+    mock.given.chatCompletion.willReturn("Hello from mock server!");
 
     const completion = await client.chat.completions.create({
       model: "gpt-4",
@@ -50,22 +36,7 @@ describe("OpenAI SDK - chat completions", () => {
   });
 
   it("handles error responses", async () => {
-    await fetch(`${baseUrl}/_admin/stubs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        matcher: { endpoint: "chat" },
-        response: {
-          type: "error",
-          status: 429,
-          error: {
-            message: "Rate limit exceeded",
-            type: "rate_limit_error",
-            code: null,
-          },
-        },
-      }),
-    });
+    mock.given.chatCompletion.willError(429, "Rate limit exceeded");
 
     await expect(
       client.chat.completions.create({
