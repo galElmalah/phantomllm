@@ -8,7 +8,7 @@ export class ContainerManager {
   constructor(private readonly config: ContainerConfig) {}
 
   async start(): Promise<{ host: string; port: number }> {
-    const container = new GenericContainer(this.config.image)
+    const builder = new GenericContainer(this.config.image)
       .withExposedPorts(this.config.containerPort)
       .withWaitStrategy(
         Wait.forHttp("/_admin/health", this.config.containerPort)
@@ -17,7 +17,7 @@ export class ContainerManager {
       .withStartupTimeout(this.config.startupTimeout)
       .withLabels({ "com.phantomllm": "true" });
 
-    this.container = await container.start();
+    this.container = await builder.start();
 
     return {
       host: this.container.getHost(),

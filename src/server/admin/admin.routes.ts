@@ -56,4 +56,18 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.stubRegistry.clearRequests();
     return reply.status(204).send();
   });
+
+  fastify.post(
+    "/_admin/config",
+    async (
+      request: FastifyRequest<{ Body: { apiKey?: string | null } }>,
+      reply: FastifyReply,
+    ) => {
+      const { apiKey } = request.body;
+      if (apiKey !== undefined) {
+        fastify.authConfig.apiKey = apiKey ?? undefined;
+      }
+      return reply.send({ ok: true });
+    },
+  );
 };

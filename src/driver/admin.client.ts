@@ -13,6 +13,7 @@ const REQUEST_TIMEOUT_MS = 5_000;
 
 export class AdminClient {
   private pendingStubs: AdminStubDefinition[] = [];
+  private pendingConfigs: Array<{ apiKey: string }> = [];
 
   constructor(private readonly baseUrl: string) {}
 
@@ -20,10 +21,22 @@ export class AdminClient {
     this.pendingStubs.push(stub);
   }
 
+  enqueueConfig(config: { apiKey: string }): void {
+    this.pendingConfigs.push(config);
+  }
+
   async flush(): Promise<void> {
-    if (this.pendingStubs.length === 0) return;
-    const stubs = this.pendingStubs.splice(0);
-    await this.post("/_admin/stubs/batch", { stubs });
+    if (this.pendingConfigs.length > 0) {
+      const configs = this.pendingConfigs.splice(0);
+      for (const config of configs) {
+        await this.post("/_admin/config", config);
+      }
+    }
+
+    if (this.pendingStubs.length > 0) {
+      const stubs = this.pendingStubs.splice(0);
+      await this.post("/_admin/stubs/batch", { stubs });
+    }
   }
 
   async clearStubs(): Promise<void> {

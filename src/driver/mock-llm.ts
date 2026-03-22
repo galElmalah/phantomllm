@@ -3,6 +3,7 @@ import { resolveContainerConfig } from "./container.config.js";
 import { ContainerManager } from "./container.manager.js";
 import { AdminClient } from "./admin.client.js";
 import { GivenStubs } from "../stubs/given.js";
+import { RequireConditions } from "../stubs/require.js";
 import { ContainerNotStartedError } from "../errors/lifecycle.errors.js";
 
 type MockLLMState = "idle" | "starting" | "running" | "stopping" | "stopped";
@@ -13,6 +14,7 @@ export class MockLLM {
   private containerManager: ContainerManager;
   private adminClient: AdminClient | null = null;
   private _given: GivenStubs | null = null;
+  private _require: RequireConditions | null = null;
   private _baseUrl: string | null = null;
 
   constructor(options?: MockLLMOptions) {
@@ -34,6 +36,7 @@ export class MockLLM {
     this._baseUrl = `http://${host}:${port}`;
     this.adminClient = new AdminClient(this._baseUrl);
     this._given = new GivenStubs(this.adminClient);
+    this._require = new RequireConditions(this.adminClient);
     this.state = "running";
   }
 
@@ -46,6 +49,7 @@ export class MockLLM {
       this.state = "stopped";
       this.adminClient = null;
       this._given = null;
+      this._require = null;
       this._baseUrl = null;
     }
   }
@@ -62,6 +66,11 @@ export class MockLLM {
   get given(): GivenStubs {
     this.assertRunning();
     return this._given!;
+  }
+
+  get require(): RequireConditions {
+    this.assertRunning();
+    return this._require!;
   }
 
   async clear(): Promise<void> {

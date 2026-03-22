@@ -32,6 +32,7 @@ await mock.stop();
   - [Streaming](#streaming)
   - [Embeddings](#embeddings)
   - [Error Simulation](#error-simulation)
+  - [API Key Validation](#api-key-validation)
   - [Stub Matching](#stub-matching)
 - [Integration Examples](#integration-examples)
   - [OpenAI Node.js SDK](#openai-nodejs-sdk)
@@ -56,7 +57,7 @@ await mock.stop();
 - **Works with any client** — OpenAI SDK, Vercel AI SDK, LangChain, opencode, Python, curl — anything that speaks the OpenAI API protocol.
 - **Streaming support** — SSE chunked responses work exactly like the real OpenAI API.
 - **Fast** — ~1s container cold start, sub-millisecond response latency, 4,000+ req/s throughput.
-- **Simple API** — fluent `given/when` pattern: `mock.given.chatCompletion.forModel('gpt-4').willReturn('Hello')`.
+- **Simple API** — fluent `given`/`require` pattern: `mock.given.chatCompletion.forModel('gpt-4').willReturn('Hello')`.
 
 ## Prerequisites
 
@@ -151,8 +152,9 @@ const mock = new MockLLM({
 | `await mock.stop()` | `void` | Stop and remove the container. Idempotent. |
 | `mock.baseUrl` | `string` | Server URL without `/v1`, e.g. `http://localhost:55123`. |
 | `mock.apiBaseUrl` | `string` | Server URL with `/v1`, e.g. `http://localhost:55123/v1`. Pass this to SDK clients. |
-| `mock.given` | `GivenStubs` | Entry point for the fluent stubbing API. |
-| `await mock.clear()` | `void` | Remove all registered stubs. Call between tests. |
+| `mock.given` | `GivenStubs` | Entry point for stubbing responses. |
+| `mock.require` | `RequireConditions` | Entry point for configuring server behavior (API key validation, etc.). |
+| `await mock.clear()` | `void` | Remove all stubs and reset server config (including API key). Call between tests. |
 
 `MockLLM` implements `Symbol.asyncDispose` for automatic cleanup:
 
@@ -260,6 +262,53 @@ Error responses follow the OpenAI error format:
     "code": null
   }
 }
+```
+
+### API Key Validation
+
+Test that your code sends the correct API key by requiring authentication on the mock server.
+
+```typescript
+mock.require.apiKey('sk-test-key-123');
+
+// Requests without a key or with the wrong key get 401
+// { error: { message: "...", type: "authentication_error", code: "invalid_api_key" } }
+
+// Only requests with the correct key succeed
+const openai = new OpenAI({
+  baseURL: mock.apiBaseUrl,
+  apiKey: 'sk-test-key-123', // must match exactly
+});
+```
+
+`mock.require` configures server constraints at runtime — no container restart needed. API key validation applies to all `/v1/*` endpoints (chat completions, embeddings, models). Admin endpoints (`/_admin/*`) are always accessible.
+
+Calling `mock.clear()` resets the API key requirement along with all stubs.
+
+| Method | Description |
+|---|---|
+| `mock.require.apiKey(key)` | Require `Authorization: Bearer <key>` on all `/v1/*` requests. Single call, no chaining needed. |
+
+**Testing auth error handling:**
+
+```typescript
+it('handles invalid API key', async () => {
+  mock.require.apiKey('correct-key');
+  mock.given.chatCompletion.willReturn('Hello');
+
+  // Client configured with wrong key
+  const badClient = new OpenAI({
+    baseURL: mock.apiBaseUrl,
+    apiKey: 'wrong-key',
+  });
+
+  await expect(
+    badClient.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: 'Hi' }],
+    }),
+  ).rejects.toThrow();
+});
 ```
 
 ### Stub Matching

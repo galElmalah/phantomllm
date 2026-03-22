@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { stubRegistryPlugin } from "./plugins/registry.plugin.js";
+import { apiKeyAuthPlugin } from "./plugins/auth.plugin.js";
 import { adminRoutes } from "./admin/admin.routes.js";
 import { chatRoutes } from "./chat/chat.routes.js";
 import { embeddingsRoutes } from "./embeddings/embeddings.routes.js";
@@ -11,6 +12,7 @@ export async function buildApp(
   const app = Fastify(opts);
 
   await app.register(stubRegistryPlugin);
+  await app.register(apiKeyAuthPlugin);
   await app.register(adminRoutes);
   await app.register(chatRoutes, { prefix: "/v1" });
   await app.register(embeddingsRoutes, { prefix: "/v1" });
