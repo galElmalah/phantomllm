@@ -1,6 +1,6 @@
 {
   "name": "phantomllm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Mock server for OpenAI-compatible APIs. Test your LLM integrations with a real HTTP server.",
   "license": "MIT",
   "type": "module",
