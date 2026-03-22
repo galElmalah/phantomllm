@@ -1,6 +1,6 @@
 {
   "name": "phantomllm",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Dockerized mock server for OpenAI-compatible APIs. Test your LLM integrations with a real HTTP server.",
   "license": "MIT",
   "type": "module",
