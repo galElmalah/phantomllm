@@ -56,13 +56,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          registry-url: https://registry.npmjs.org
 
       - run: npm ci
       - run: npm run build
 
-      - name: Configure npm for OIDC publishing
+      - name: Debug npm config
         run: |
-          echo "registry=https://registry.npmjs.org/" > ~/.npmrc
+          echo "npm version: $(npm --version)"
+          echo "node version: $(node --version)"
+          npm config list
+          echo "=== .npmrc ==="
+          cat ~/.npmrc || true
+          cat .npmrc || true
 
       - name: Publish to npm via Trusted Publishing
         run: npm publish --provenance --access public
+        env:
+          NPM_CONFIG_PROVENANCE: "true"
