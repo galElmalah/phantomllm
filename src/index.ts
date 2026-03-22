@@ -1,5 +1,4 @@
 export { MockLLM } from "./driver/mock-llm.js";
-export type { MockLLMOptions } from "./types/config.js";
 export { MockLLMError } from "./errors/base.js";
 export { ContainerNotStartedError } from "./errors/lifecycle.errors.js";
 export { StubConfigurationError } from "./errors/stub.errors.js";

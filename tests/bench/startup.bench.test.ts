@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { MockLLM } from "../../src/driver/mock-llm.js";
 import { computeStats, formatResult } from "./helpers.js";
 
-describe("docker lifecycle benchmarks", () => {
+describe("server lifecycle benchmarks", () => {
   it("measures cold start (MockLLM.start)", async () => {
     const mock = new MockLLM();
 
@@ -10,7 +10,7 @@ describe("docker lifecycle benchmarks", () => {
     await mock.start();
     const elapsed = performance.now() - start;
 
-    console.log(`\n  docker cold start: ${elapsed.toFixed(0)}ms`);
+    console.log(`\n  cold start: ${elapsed.toFixed(0)}ms`);
 
     expect(elapsed).toBeLessThan(30_000);
 
@@ -25,7 +25,7 @@ describe("docker lifecycle benchmarks", () => {
     await mock.stop();
     const elapsed = performance.now() - start;
 
-    console.log(`\n  docker stop: ${elapsed.toFixed(0)}ms`);
+    console.log(`\n  stop: ${elapsed.toFixed(0)}ms`);
 
     expect(elapsed).toBeLessThan(10_000);
   }, 60_000);
@@ -44,7 +44,7 @@ describe("docker lifecycle benchmarks", () => {
       await mock.stop();
     }
 
-    const result = computeStats("docker start/stop cycle", samples);
+    const result = computeStats("start/stop cycle", samples);
     console.log("\n" + formatResult(result));
   }, 120_000);
 

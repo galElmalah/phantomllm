@@ -10,5 +10,4 @@ export default defineConfig({
   outDir: "dist",
   target: "es2022",
   treeshake: true,
-  external: ["testcontainers"],
 });

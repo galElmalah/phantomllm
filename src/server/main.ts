@@ -12,3 +12,10 @@ process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
 await app.listen({ port: PORT, host: HOST });
+
+const address = app.server.address();
+const boundPort = typeof address === "object" && address ? address.port : PORT;
+
+if (process.send) {
+  process.send({ type: "ready", port: boundPort });
+}

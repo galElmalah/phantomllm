@@ -14,7 +14,7 @@ afterAll(async () => {
   await mock.stop();
 });
 
-describe("throughput benchmarks (docker)", () => {
+describe("throughput benchmarks ", () => {
   it("measures sequential chat requests per second", async () => {
     await fetch(`${baseUrl}/_admin/stubs`, {
       method: "POST",
@@ -59,7 +59,7 @@ describe("throughput benchmarks (docker)", () => {
 
     await mock.clear();
 
-    console.log(`\n  sequential chat throughput (docker)`);
+    console.log(`\n  sequential chat throughput `);
     console.log(`    requests:  ${count}`);
     console.log(`    duration:  ${elapsed.toFixed(0)}ms`);
     console.log(`    rps:       ${rps.toFixed(1)} req/s`);
@@ -137,7 +137,7 @@ describe("throughput benchmarks (docker)", () => {
     expect(rps).toBeGreaterThan(100);
   });
 
-  it("measures health endpoint throughput via docker", async () => {
+  it("measures health endpoint throughput ", async () => {
     // warmup
     for (let i = 0; i < 10; i++) {
       await fetch(`${baseUrl}/_admin/health`);
@@ -156,7 +156,7 @@ describe("throughput benchmarks (docker)", () => {
     const elapsed = performance.now() - start;
     const rps = (count / elapsed) * 1000;
 
-    console.log(`\n  health endpoint throughput (docker)`);
+    console.log(`\n  health endpoint throughput `);
     console.log(`    requests:  ${count}`);
     console.log(`    duration:  ${elapsed.toFixed(0)}ms`);
     console.log(`    rps:       ${rps.toFixed(1)} req/s`);

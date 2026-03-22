@@ -5,7 +5,7 @@
 <h1 align="center">phantomllm</h1>
 
 <p align="center">
-  Dockerized mock server for OpenAI-compatible APIs.<br/>
+  Mock server for OpenAI-compatible APIs.<br/>
   Test your LLM integrations against a real HTTP server instead of patching <code>fetch</code>.
 </p>
 
@@ -23,8 +23,7 @@ await mock.stop();
 ## Table of Contents
 
 - [Why phantomllm?](#why-phantomllm)
-- [Prerequisites](#prerequisites)
-- [Setup](#setup)
+- [Installation](#installation)
 - [Getting the Server URL](#getting-the-server-url)
 - [API Reference](#api-reference)
   - [MockLLM](#mockllm)
@@ -47,72 +46,44 @@ await mock.stop();
   - [Jest](#jest)
   - [Shared Fixture for Multi-File Suites](#shared-fixture-for-multi-file-suites)
 - [Performance](#performance)
-- [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
 ## Why phantomllm?
 
-- **Real HTTP server** — no monkey-patching `fetch` or `http`. Your SDK makes actual network calls through a real TCP connection.
-- **Works with any client** — OpenAI SDK, Vercel AI SDK, LangChain, opencode, Python, curl — anything that speaks the OpenAI API protocol.
+- **Real HTTP server** — no monkey-patching `fetch` or `http`. Your SDK makes actual network calls.
+- **Zero config** — `npm install phantomllm` and go. No Docker, no external services, no setup steps.
+- **Works with any client** — OpenAI SDK, Vercel AI SDK, LangChain, opencode, Python, curl.
 - **Streaming support** — SSE chunked responses work exactly like the real OpenAI API.
-- **Fast** — ~1s container cold start, sub-millisecond response latency, 4,000+ req/s throughput.
-- **Simple API** — fluent `given`/`require` pattern: `mock.given.chatCompletion.forModel('gpt-4').willReturn('Hello')`.
+- **Fast** — in-process Fastify server, sub-millisecond response latency.
+- **Simple API** — fluent `given`/`expect` pattern: `mock.given.chatCompletion.forModel('gpt-4').willReturn('Hello')`.
 
-## Prerequisites
-
-| Requirement | Version |
-|-------------|---------|
-| Node.js     | 18+     |
-| Docker      | 20.10+  |
-
-Docker must be running before you call `mock.start()`. Verify with:
-
-```bash
-docker info
-```
-
-## Setup
-
-### 1. Install the package
+## Installation
 
 ```bash
 npm install phantomllm --save-dev
 ```
 
-### 2. Build the Docker image
-
-The mock server runs inside Docker. You need to build the image once before running tests:
+```bash
+pnpm add -D phantomllm
+```
 
 ```bash
-# Clone the repo (if using from source)
-npm run docker:build
+yarn add -D phantomllm
 ```
 
-This builds a ~170MB Alpine-based image tagged `phantomllm-server:latest`. The image contains only the compiled Fastify server — no dev dependencies.
-
-### 3. Verify it works
-
-```typescript
-import { MockLLM } from 'phantomllm';
-
-const mock = new MockLLM();
-await mock.start();
-console.log('Mock server running at:', mock.apiBaseUrl);
-// => "Mock server running at: http://localhost:55123/v1"
-await mock.stop();
-```
+That's it. No Docker, no image builds, no extra setup.
 
 ## Getting the Server URL
 
-`MockLLM` provides two URL getters. Use whichever fits your client:
+`MockLLM` provides two URL getters:
 
 ```typescript
 const mock = new MockLLM();
 await mock.start();
 
-mock.baseUrl      // "http://localhost:55123"     — raw host:port
-mock.apiBaseUrl   // "http://localhost:55123/v1"   — includes /v1 prefix
+mock.baseUrl      // "http://127.0.0.1:55123"     — raw host:port
+mock.apiBaseUrl   // "http://127.0.0.1:55123/v1"   — includes /v1 prefix
 ```
 
 **Which one to use:**
@@ -122,10 +93,7 @@ mock.apiBaseUrl   // "http://localhost:55123/v1"   — includes /v1 prefix
 | OpenAI SDK (`baseURL`) | `mock.apiBaseUrl` | `new OpenAI({ baseURL: mock.apiBaseUrl })` |
 | Vercel AI SDK (`baseURL`) | `mock.apiBaseUrl` | `createOpenAI({ baseURL: mock.apiBaseUrl })` |
 | LangChain (`configuration.baseURL`) | `mock.apiBaseUrl` | `new ChatOpenAI({ configuration: { baseURL: mock.apiBaseUrl } })` |
-| opencode config | `mock.apiBaseUrl` | `"baseURL": "http://localhost:55123/v1"` |
-| Python openai (`base_url`) | `mock.apiBaseUrl` | `OpenAI(base_url=mock.apiBaseUrl)` |
-| Plain fetch | `mock.baseUrl` | `fetch(\`${mock.baseUrl}/v1/chat/completions\`)` |
-| Admin API | `mock.baseUrl` | `fetch(\`${mock.baseUrl}/_admin/health\`)` |
+| Plain fetch | `mock.baseUrl` | `` fetch(`${mock.baseUrl}/v1/chat/completions`) `` |
 
 Most SDK clients expect the URL to end with `/v1`. Use `mock.apiBaseUrl` and you won't need to think about it.
 
@@ -133,28 +101,23 @@ Most SDK clients expect the URL to end with `/v1`. Use `mock.apiBaseUrl` and you
 
 ### MockLLM
 
-The main class. Creates and manages a Docker container running the mock OpenAI server.
+The main class. Starts an in-process HTTP server that implements the OpenAI API.
 
 ```typescript
 import { MockLLM } from 'phantomllm';
 
-const mock = new MockLLM({
-  image: 'phantomllm-server:latest', // Docker image name (default)
-  containerPort: 8080,              // Port inside the container (default)
-  reuse: true,                      // Reuse container across runs (default)
-  startupTimeout: 30_000,           // Max ms to wait for startup (default)
-});
+const mock = new MockLLM();
 ```
 
 | Method / Property | Returns | Description |
 |---|---|---|
-| `await mock.start()` | `void` | Start the Docker container. Idempotent — safe to call twice. |
-| `await mock.stop()` | `void` | Stop and remove the container. Idempotent. |
-| `mock.baseUrl` | `string` | Server URL without `/v1`, e.g. `http://localhost:55123`. |
-| `mock.apiBaseUrl` | `string` | Server URL with `/v1`, e.g. `http://localhost:55123/v1`. Pass this to SDK clients. |
+| `await mock.start()` | `void` | Start the mock server. Idempotent — safe to call twice. |
+| `await mock.stop()` | `void` | Stop the server. Idempotent. |
+| `mock.baseUrl` | `string` | Server URL without `/v1`, e.g. `http://127.0.0.1:55123`. |
+| `mock.apiBaseUrl` | `string` | Server URL with `/v1`, e.g. `http://127.0.0.1:55123/v1`. Pass this to SDK clients. |
 | `mock.given` | `GivenStubs` | Entry point for stubbing responses. |
 | `mock.expect` | `ExpectConditions` | Entry point for configuring server behavior (API key validation, etc.). |
-| `await mock.clear()` | `void` | Remove all stubs and reset server config (including API key). Call between tests. |
+| `await mock.clear()` | `void` | Remove all stubs and reset server config. Call between tests. |
 
 `MockLLM` implements `Symbol.asyncDispose` for automatic cleanup:
 
@@ -266,7 +229,7 @@ Error responses follow the OpenAI error format:
 
 ### API Key Validation
 
-Test that your code sends the correct API key by requiring authentication on the mock server.
+Test that your code sends the correct API key.
 
 ```typescript
 mock.expect.apiKey('sk-test-key-123');
@@ -281,13 +244,13 @@ const openai = new OpenAI({
 });
 ```
 
-`mock.expect` configures server constraints at runtime — no container restart needed. API key validation applies to all `/v1/*` endpoints (chat completions, embeddings, models). Admin endpoints (`/_admin/*`) are always accessible.
+`mock.expect` configures server constraints at runtime. API key validation applies to all `/v1/*` endpoints. Admin endpoints (`/_admin/*`) are always accessible.
 
 Calling `mock.clear()` resets the API key requirement along with all stubs.
 
 | Method | Description |
 |---|---|
-| `mock.expect.apiKey(key)` | Require `Authorization: Bearer <key>` on all `/v1/*` requests. Single call, no chaining needed. |
+| `mock.expect.apiKey(key)` | Require `Authorization: Bearer <key>` on all `/v1/*` requests. |
 
 **Testing auth error handling:**
 
@@ -296,7 +259,6 @@ it('handles invalid API key', async () => {
   mock.expect.apiKey('correct-key');
   mock.given.chatCompletion.willReturn('Hello');
 
-  // Client configured with wrong key
   const badClient = new OpenAI({
     baseURL: mock.apiBaseUrl,
     apiKey: 'wrong-key',
@@ -349,7 +311,7 @@ await mock.start();
 
 const openai = new OpenAI({
   baseURL: mock.apiBaseUrl,
-  apiKey: 'test-key', // any string — the mock doesn't validate keys
+  apiKey: 'test-key',
 });
 
 // Non-streaming
@@ -428,7 +390,7 @@ for await (const chunk of result.textStream) {
 await mock.stop();
 ```
 
-> **Note:** Use `provider.chat('model')` instead of `provider('model')` to ensure requests go through `/v1/chat/completions`. The default `provider('model')` in `@ai-sdk/openai` v3+ uses the Responses API.
+> **Note:** Use `provider.chat('model')` instead of `provider('model')` to ensure requests go through `/v1/chat/completions`.
 
 ### opencode
 
@@ -439,7 +401,7 @@ Add a provider entry to your `opencode.json` pointing at the mock:
   "provider": {
     "mock": {
       "api": "openai",
-      "baseURL": "http://localhost:PORT/v1",
+      "baseURL": "http://127.0.0.1:PORT/v1",
       "apiKey": "test-key",
       "models": {
         "gpt-4o": { "id": "gpt-4o" }
@@ -449,13 +411,12 @@ Add a provider entry to your `opencode.json` pointing at the mock:
 }
 ```
 
-Start the mock and print the URL to use:
+Start the mock and print the URL:
 
 ```typescript
 const mock = new MockLLM();
 await mock.start();
 console.log(`Set baseURL to: ${mock.apiBaseUrl}`);
-// Update the port in opencode.json to match
 ```
 
 ### LangChain
@@ -485,13 +446,13 @@ await mock.stop();
 
 ### Python openai package
 
-The mock server is a real HTTP server — any language can use it. Start the mock from Node.js, then connect from Python:
+The mock server is a real HTTP server — any language can connect to it. Start the mock from Node.js, then use it from Python:
 
 ```python
 import openai
 
 client = openai.OpenAI(
-    base_url="http://localhost:55123/v1",  # use mock.apiBaseUrl
+    base_url="http://127.0.0.1:55123/v1",  # use mock.apiBaseUrl
     api_key="test-key",
 )
 
@@ -521,7 +482,7 @@ console.log(data.choices[0].message.content);
 ### curl
 
 ```bash
-curl http://localhost:55123/v1/chat/completions \
+curl http://127.0.0.1:55123/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o",
@@ -545,14 +506,14 @@ describe('my LLM feature', () => {
   beforeAll(async () => {
     await mock.start();
     openai = new OpenAI({ baseURL: mock.apiBaseUrl, apiKey: 'test' });
-  }, 30_000);
+  });
 
   afterAll(async () => {
     await mock.stop();
   });
 
   beforeEach(async () => {
-    await mock.clear(); // reset stubs between tests
+    await mock.clear();
   });
 
   it('should summarize text', async () => {
@@ -611,7 +572,7 @@ describe('my LLM feature', () => {
   beforeAll(async () => {
     await mock.start();
     openai = new OpenAI({ baseURL: mock.apiBaseUrl, apiKey: 'test' });
-  }, 30_000); // container startup timeout
+  });
 
   afterAll(() => mock.stop());
   beforeEach(() => mock.clear());
@@ -631,7 +592,7 @@ describe('my LLM feature', () => {
 
 ### Shared Fixture for Multi-File Suites
 
-Start one container for your entire test suite. Each test file imports the shared mock and clears stubs between tests.
+Start one server for your entire test suite:
 
 **`tests/support/mock.ts`**
 
@@ -642,7 +603,6 @@ export const mock = new MockLLM();
 
 export async function setup() {
   await mock.start();
-  // Make the URL available to other processes if needed
   process.env.PHANTOMLLM_URL = mock.apiBaseUrl;
 }
 
@@ -678,95 +638,27 @@ it('works', async () => {
 
 ## Performance
 
-Benchmarks on Apple Silicon (Docker via OrbStack):
+The mock server runs in-process using Fastify — no Docker overhead:
 
-### Container Lifecycle
+| Metric | Value |
+|--------|-------|
+| Server startup | < 5ms |
+| Chat completion response | ~0.2ms median |
+| Streaming (8 chunks) | ~0.2ms total |
+| Embedding (1536-dim) | ~0.3ms median |
+| Throughput | ~11,000 req/s |
 
-| Metric | Time |
-|--------|------|
-| Cold start (`mock.start()`) | ~1.1s |
-| Stop (`mock.stop()`) | ~130ms |
-| Full lifecycle (start, stub, request, stop) | ~1.2s |
-
-### Request Latency (through Docker network)
-
-| Metric | Median | p95 |
-|--------|--------|-----|
-| Chat completion (non-streaming) | 0.6ms | 1.8ms |
-| Streaming TTFB | 0.7ms | 0.9ms |
-| Streaming total (8 chunks) | 0.7ms | 1.0ms |
-| Embedding (1536-dim) | 0.7ms | 1.6ms |
-| Embedding batch (10x1536) | 1.9ms | 2.7ms |
-| Stub registration | 0.5ms | 0.8ms |
-| Clear stubs | 0.2ms | 0.4ms |
-
-### Throughput
-
-| Metric | Requests/sec |
-|--------|-------------|
-| Sequential chat completions | ~4,300 |
-| Concurrent (10 workers) | ~6,400 |
-| Health endpoint | ~5,900 |
-
-### Tips
-
-- **Don't restart between tests.** Call `mock.clear()` (sub-millisecond) instead of `stop()`/`start()` (~1.2s).
-- **Use global setup.** Start one container for your entire suite. See [Shared Fixture](#shared-fixture-for-multi-file-suites).
-- **Cache the Docker image in CI.** Build it once and cache the layer:
-
-```yaml
-# GitHub Actions
-- name: Build mock server image
-  run: npm run docker:build
-
-- name: Cache Docker layers
-  uses: actions/cache@v4
-  with:
-    path: /tmp/.buildx-cache
-    key: ${{ runner.os }}-docker-phantomllm-${{ hashFiles('Dockerfile') }}
-```
-
-## Configuration
-
-### Constructor Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `image` | `string` | `'phantomllm-server:latest'` | Docker image to run. |
-| `containerPort` | `number` | `8080` | Port the server listens on inside the container. |
-| `reuse` | `boolean` | `true` | Reuse a running container across test runs. |
-| `startupTimeout` | `number` | `30000` | Max milliseconds to wait for the container to become healthy. |
-
-### Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `PHANTOMLLM_IMAGE` | Override the Docker image name without changing code. Takes precedence over the default but not over the constructor `image` option. |
-
-### OpenAI-Compatible Endpoints
-
-The mock server implements:
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/v1/chat/completions` | POST | Chat completions (streaming and non-streaming) |
-| `/v1/embeddings` | POST | Text embeddings |
-| `/v1/models` | GET | List available models |
-| `/_admin/stubs` | POST | Register a stub |
-| `/_admin/stubs` | DELETE | Clear all stubs |
-| `/_admin/health` | GET | Health check |
+**Tips:**
+- Start the server once in `beforeAll`, call `mock.clear()` between tests.
+- Use a [shared fixture](#shared-fixture-for-multi-file-suites) for multi-file test suites.
 
 ## Troubleshooting
 
 | Problem | Cause | Solution |
 |---|---|---|
 | `ContainerNotStartedError` | Using `baseUrl`, `given`, or `clear()` before `start()`. | Call `await mock.start()` first. |
-| Container startup timeout | Docker not running or image not built. | Run `docker info` to verify Docker. Run `npm run docker:build` to build the image. |
-| Connection refused | Wrong URL or container not ready. | Use `mock.apiBaseUrl` for SDK clients. Ensure `start()` has resolved. |
 | Stubs leaking between tests | Stubs persist until cleared. | Call `await mock.clear()` in `beforeEach`. |
 | 418 response | No stub matches the request. | Register a stub matching the model/content, or add a catch-all: `mock.given.chatCompletion.willReturn('...')`. |
-| `PHANTOMLLM_IMAGE` env var | Need a custom image. | Set `PHANTOMLLM_IMAGE=my-registry/image:tag` in your environment. |
-| Slow CI | Image rebuilt every run. | Cache Docker layers and enable container reuse. |
 | AI SDK uses wrong endpoint | `provider('model')` defaults to Responses API in v3+. | Use `provider.chat('model')` to target `/v1/chat/completions`. |
 
 ## License

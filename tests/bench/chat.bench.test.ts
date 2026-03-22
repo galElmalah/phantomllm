@@ -15,7 +15,7 @@ afterAll(async () => {
   await mock.stop();
 });
 
-describe("chat completion benchmarks (docker)", () => {
+describe("chat completion benchmarks ", () => {
   it("measures non-streaming response latency", async () => {
     mock.given.chatCompletion.willReturn("Hello from the mock!");
 
@@ -56,7 +56,7 @@ describe("chat completion benchmarks (docker)", () => {
 
     await mock.clear();
 
-    const result = computeStats("chat completion via docker (non-streaming)", samples);
+    const result = computeStats("chat completion  (non-streaming)", samples);
     console.log("\n" + formatResult(result));
 
     expect(result.median).toBeLessThan(50);
@@ -144,7 +144,7 @@ describe("chat completion benchmarks (docker)", () => {
 
     await mock.clear();
 
-    const result = computeStats("stub registration via docker", samples);
+    const result = computeStats("stub registration ", samples);
     console.log("\n" + formatResult(result));
 
     expect(result.median).toBeLessThan(20);
@@ -173,7 +173,7 @@ describe("chat completion benchmarks (docker)", () => {
       samples.push(elapsed);
     }
 
-    const result = computeStats("clear 50 stubs via docker", samples);
+    const result = computeStats("clear 50 stubs ", samples);
     console.log("\n" + formatResult(result));
 
     expect(result.median).toBeLessThan(20);

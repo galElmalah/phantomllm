@@ -27,26 +27,23 @@
   },
   "scripts": {
     "build": "tsup",
-    "build:server": "tsc --project tsconfig.server.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:sdk": "vitest run --project sdk",
     "test:bench": "vitest run --project bench",
-    "docker:build": "npm run build:server && docker build -t phantomllm-server:latest .",
     "prepublishOnly": "npm run build",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "testcontainers": "^11.13.0"
+    "fastify": "^5.8.2",
+    "fastify-plugin": "^5.1.0"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^3.0.47",
     "@types/node": "^22.15.0",
     "ai": "^6.0.134",
-    "fastify": "^5.8.2",
-    "fastify-plugin": "^5.1.0",
     "openai": "^6.32.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
@@ -60,8 +57,6 @@
     "openai",
     "mock",
     "testing",
-    "testcontainers",
-    "docker",
     "llm",
     "ai-sdk"
   ]

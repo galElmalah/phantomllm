@@ -15,7 +15,7 @@ afterAll(async () => {
   await mock.stop();
 });
 
-describe("embedding benchmarks (docker)", () => {
+describe("embedding benchmarks ", () => {
   it("measures embedding response latency", async () => {
     const vector = Array.from({ length: 1536 }, (_, i) => i * 0.001);
 
@@ -60,7 +60,7 @@ describe("embedding benchmarks (docker)", () => {
 
     await mock.clear();
 
-    const result = computeStats("embedding via docker (1536-dim)", samples);
+    const result = computeStats("embedding  (1536-dim)", samples);
     console.log("\n" + formatResult(result));
 
     expect(result.median).toBeLessThan(50);
@@ -101,7 +101,7 @@ describe("embedding benchmarks (docker)", () => {
 
     await mock.clear();
 
-    const result = computeStats("embedding batch via docker (10x1536-dim)", samples);
+    const result = computeStats("embedding batch  (10x1536-dim)", samples);
     console.log("\n" + formatResult(result));
 
     expect(result.median).toBeLessThan(100);
