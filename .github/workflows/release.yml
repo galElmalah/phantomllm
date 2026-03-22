@@ -24,20 +24,42 @@ jobs:
 
       - name: Publish to npm
         run: |
-          OIDC_TOKEN=$(curl -sS \
+          # 1. Get GitHub OIDC token
+          echo "::group::Requesting OIDC token"
+          OIDC_RESPONSE=$(curl -sS \
             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://registry.npmjs.org" \
-            | jq -r '.value')
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://registry.npmjs.org")
+          OIDC_TOKEN=$(echo "$OIDC_RESPONSE" | jq -r '.value')
 
-          NPM_TOKEN=$(curl -sS -X POST \
-            "https://registry.npmjs.org/-/npm/v1/security/oidc/token" \
-            -H "Content-Type: application/json" \
-            -d "{\"oidcToken\": \"${OIDC_TOKEN}\"}" \
-            | jq -r '.token')
-
-          if [ -z "$NPM_TOKEN" ] || [ "$NPM_TOKEN" = "null" ]; then
-            echo "::error::OIDC token exchange failed. Check Trusted Publishing config on npmjs.com"
+          if [ -z "$OIDC_TOKEN" ] || [ "$OIDC_TOKEN" = "null" ]; then
+            echo "::error::Failed to get OIDC token from GitHub"
+            echo "Response: $OIDC_RESPONSE"
             exit 1
           fi
+          echo "Got OIDC token (${#OIDC_TOKEN} chars)"
+          echo "::endgroup::"
 
+          # 2. Exchange for npm token
+          echo "::group::Exchanging OIDC token with npm"
+          NPM_RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
+            "https://registry.npmjs.org/-/npm/v1/security/oidc/token" \
+            -H "Content-Type: application/json" \
+            -d "{\"oidcToken\": \"${OIDC_TOKEN}\"}")
+          HTTP_CODE=$(echo "$NPM_RESPONSE" | tail -1)
+          BODY=$(echo "$NPM_RESPONSE" | sed '$d')
+          echo "npm OIDC exchange HTTP status: $HTTP_CODE"
+          echo "npm OIDC exchange response: $BODY"
+
+          NPM_TOKEN=$(echo "$BODY" | jq -r '.token // empty')
+
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::npm OIDC token exchange failed (HTTP $HTTP_CODE)"
+            echo "::error::Response: $BODY"
+            echo "::error::Verify Trusted Publishing config: owner=galElmalah repo=phantomllm workflow=release.yml environment=(empty)"
+            exit 1
+          fi
+          echo "Got npm token (${#NPM_TOKEN} chars)"
+          echo "::endgroup::"
+
+          # 3. Publish
           NODE_AUTH_TOKEN="$NPM_TOKEN" npm publish --provenance --access public
