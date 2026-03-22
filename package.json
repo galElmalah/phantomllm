@@ -1,6 +1,6 @@
 {
   "name": "phantomllm",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Dockerized mock server for OpenAI-compatible APIs. Test your LLM integrations with a real HTTP server.",
   "license": "MIT",
   "type": "module",
@@ -51,6 +51,10 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/galElmalah/phantomllm.git"
   },
   "keywords": [
     "openai",
