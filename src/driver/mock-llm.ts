@@ -1,4 +1,3 @@
-import { AdminClient } from "./admin.client.js";
 import { GivenStubs } from "../stubs/given.js";
 import { ExpectConditions } from "../stubs/expect.js";
 import { ServerNotStartedError } from "../errors/lifecycle.errors.js";
@@ -10,7 +9,6 @@ export class MockLLM {
   private state: MockLLMState = "idle";
   private startPromise: Promise<void> | null = null;
   private app: Awaited<ReturnType<typeof buildApp>> | null = null;
-  private adminClient: AdminClient | null = null;
   private _given: GivenStubs | null = null;
   private _expect: ExpectConditions | null = null;
   private _baseUrl: string | null = null;
@@ -31,9 +29,8 @@ export class MockLLM {
     const address = this.app.server.address();
     const port = typeof address === "object" && address ? address.port : 0;
     this._baseUrl = `http://127.0.0.1:${port}`;
-    this.adminClient = new AdminClient(this._baseUrl);
-    this._given = new GivenStubs(this.adminClient);
-    this._expect = new ExpectConditions(this.adminClient);
+    this._given = new GivenStubs(this.app.stubRegistry);
+    this._expect = new ExpectConditions(this.app.authConfig);
     this.state = "running";
   }
 
@@ -47,7 +44,6 @@ export class MockLLM {
     } finally {
       this.state = "stopped";
       this.app = null;
-      this.adminClient = null;
       this._given = null;
       this._expect = null;
       this._baseUrl = null;
@@ -73,9 +69,11 @@ export class MockLLM {
     return this._expect!;
   }
 
-  async clear(): Promise<void> {
+  clear(): void {
     this.assertRunning();
-    await this.adminClient!.clearStubs();
+    this.app!.stubRegistry.clear();
+    this.app!.stubRegistry.clearRequests();
+    this.app!.authConfig.apiKey = undefined;
   }
 
   async [Symbol.asyncDispose](): Promise<void> {

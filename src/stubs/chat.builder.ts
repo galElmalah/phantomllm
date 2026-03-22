@@ -1,10 +1,10 @@
-import type { AdminClient } from "../driver/admin.client.js";
-import type { AdminStubMatcher } from "../driver/admin.client.types.js";
+import type { StubRegistry } from "../server/stubs/stub.registry.js";
+import type { StubMatcher, StubResponseConfig } from "../server/stubs/stub.types.js";
 
 export class ChatCompletionStubBuilder {
-  private readonly matcher: AdminStubMatcher = { endpoint: "chat" };
+  private readonly matcher: StubMatcher = { endpoint: "chat" };
 
-  constructor(private readonly adminClient: AdminClient) {}
+  constructor(private readonly registry: StubRegistry) {}
 
   forModel(model: string): this {
     this.matcher.model = model;
@@ -17,27 +17,21 @@ export class ChatCompletionStubBuilder {
   }
 
   willReturn(content: string): void {
-    this.adminClient.enqueueStub({
-      matcher: this.matcher,
-      response: { type: "chat", body: content },
-    });
+    const response: StubResponseConfig = { type: "chat", body: content };
+    this.registry.register(this.matcher, response);
   }
 
   willStream(chunks: string[]): void {
-    this.adminClient.enqueueStub({
-      matcher: this.matcher,
-      response: { type: "streaming-chat", chunks },
-    });
+    const response: StubResponseConfig = { type: "streaming-chat", chunks };
+    this.registry.register(this.matcher, response);
   }
 
   willError(statusCode: number, message: string): void {
-    this.adminClient.enqueueStub({
-      matcher: this.matcher,
-      response: {
-        type: "error",
-        status: statusCode,
-        error: { message, type: "api_error", code: null },
-      },
-    });
+    const response: StubResponseConfig = {
+      type: "error",
+      status: statusCode,
+      error: { message, type: "api_error", code: null },
+    };
+    this.registry.register(this.matcher, response);
   }
 }

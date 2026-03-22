@@ -1,12 +1,11 @@
-import type { AdminClient } from "../driver/admin.client.js";
+import type { StubRegistry } from "../server/stubs/stub.registry.js";
+import type { StubResponseConfig } from "../server/stubs/stub.types.js";
 
 export class ModelsStubBuilder {
-  constructor(private readonly adminClient: AdminClient) {}
+  constructor(private readonly registry: StubRegistry) {}
 
   willReturn(models: Array<{ id: string; ownedBy?: string }>): void {
-    this.adminClient.enqueueStub({
-      matcher: {},
-      response: { type: "models", models },
-    });
+    const response: StubResponseConfig = { type: "models", models };
+    this.registry.register({}, response);
   }
 }

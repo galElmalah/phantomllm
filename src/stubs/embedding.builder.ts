@@ -1,10 +1,10 @@
-import type { AdminClient } from "../driver/admin.client.js";
-import type { AdminStubMatcher } from "../driver/admin.client.types.js";
+import type { StubRegistry } from "../server/stubs/stub.registry.js";
+import type { StubMatcher, StubResponseConfig } from "../server/stubs/stub.types.js";
 
 export class EmbeddingStubBuilder {
-  private readonly matcher: AdminStubMatcher = { endpoint: "embeddings" };
+  private readonly matcher: StubMatcher = { endpoint: "embeddings" };
 
-  constructor(private readonly adminClient: AdminClient) {}
+  constructor(private readonly registry: StubRegistry) {}
 
   forModel(model: string): this {
     this.matcher.model = model;
@@ -16,20 +16,16 @@ export class EmbeddingStubBuilder {
       ? (vector as number[][])
       : [vector as number[]];
 
-    this.adminClient.enqueueStub({
-      matcher: this.matcher,
-      response: { type: "embedding", vectors },
-    });
+    const response: StubResponseConfig = { type: "embedding", vectors };
+    this.registry.register(this.matcher, response);
   }
 
   willError(statusCode: number, message: string): void {
-    this.adminClient.enqueueStub({
-      matcher: this.matcher,
-      response: {
-        type: "error",
-        status: statusCode,
-        error: { message, type: "api_error", code: null },
-      },
-    });
+    const response: StubResponseConfig = {
+      type: "error",
+      status: statusCode,
+      error: { message, type: "api_error", code: null },
+    };
+    this.registry.register(this.matcher, response);
   }
 }

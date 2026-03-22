@@ -1,20 +1,20 @@
-import type { AdminClient } from "../driver/admin.client.js";
+import type { StubRegistry } from "../server/stubs/stub.registry.js";
 import { ChatCompletionStubBuilder } from "./chat.builder.js";
 import { EmbeddingStubBuilder } from "./embedding.builder.js";
 import { ModelsStubBuilder } from "./models.builder.js";
 
 export class GivenStubs {
-  constructor(private readonly adminClient: AdminClient) {}
+  constructor(private readonly registry: StubRegistry) {}
 
   get chatCompletion(): ChatCompletionStubBuilder {
-    return new ChatCompletionStubBuilder(this.adminClient);
+    return new ChatCompletionStubBuilder(this.registry);
   }
 
   get embedding(): EmbeddingStubBuilder {
-    return new EmbeddingStubBuilder(this.adminClient);
+    return new EmbeddingStubBuilder(this.registry);
   }
 
   get models(): ModelsStubBuilder {
-    return new ModelsStubBuilder(this.adminClient);
+    return new ModelsStubBuilder(this.registry);
   }
 }
