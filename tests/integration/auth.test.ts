@@ -45,7 +45,7 @@ async function addChatStub(content: string): Promise<void> {
   });
 }
 
-describe("api key validation (require.apiKey)", () => {
+describe("api key validation (expect.apiKey)", () => {
   it("rejects requests without Authorization header", async () => {
     await setApiKey("test-secret");
 

@@ -153,7 +153,7 @@ const mock = new MockLLM({
 | `mock.baseUrl` | `string` | Server URL without `/v1`, e.g. `http://localhost:55123`. |
 | `mock.apiBaseUrl` | `string` | Server URL with `/v1`, e.g. `http://localhost:55123/v1`. Pass this to SDK clients. |
 | `mock.given` | `GivenStubs` | Entry point for stubbing responses. |
-| `mock.require` | `RequireConditions` | Entry point for configuring server behavior (API key validation, etc.). |
+| `mock.expect` | `ExpectConditions` | Entry point for configuring server behavior (API key validation, etc.). |
 | `await mock.clear()` | `void` | Remove all stubs and reset server config (including API key). Call between tests. |
 
 `MockLLM` implements `Symbol.asyncDispose` for automatic cleanup:
@@ -269,7 +269,7 @@ Error responses follow the OpenAI error format:
 Test that your code sends the correct API key by requiring authentication on the mock server.
 
 ```typescript
-mock.require.apiKey('sk-test-key-123');
+mock.expect.apiKey('sk-test-key-123');
 
 // Requests without a key or with the wrong key get 401
 // { error: { message: "...", type: "authentication_error", code: "invalid_api_key" } }
@@ -281,19 +281,19 @@ const openai = new OpenAI({
 });
 ```
 
-`mock.require` configures server constraints at runtime — no container restart needed. API key validation applies to all `/v1/*` endpoints (chat completions, embeddings, models). Admin endpoints (`/_admin/*`) are always accessible.
+`mock.expect` configures server constraints at runtime — no container restart needed. API key validation applies to all `/v1/*` endpoints (chat completions, embeddings, models). Admin endpoints (`/_admin/*`) are always accessible.
 
 Calling `mock.clear()` resets the API key requirement along with all stubs.
 
 | Method | Description |
 |---|---|
-| `mock.require.apiKey(key)` | Require `Authorization: Bearer <key>` on all `/v1/*` requests. Single call, no chaining needed. |
+| `mock.expect.apiKey(key)` | Require `Authorization: Bearer <key>` on all `/v1/*` requests. Single call, no chaining needed. |
 
 **Testing auth error handling:**
 
 ```typescript
 it('handles invalid API key', async () => {
-  mock.require.apiKey('correct-key');
+  mock.expect.apiKey('correct-key');
   mock.given.chatCompletion.willReturn('Hello');
 
   // Client configured with wrong key

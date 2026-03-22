@@ -1,6 +1,6 @@
 import type { AdminClient } from "../driver/admin.client.js";
 
-export class RequireConditions {
+export class ExpectConditions {
   constructor(private readonly adminClient: AdminClient) {}
 
   apiKey(key: string): void {
