@@ -61,20 +61,26 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Fetch OIDC token and publish
+      - name: Publish to npm via Trusted Publishing
         run: |
-          # Request OIDC token from GitHub
-          OIDC_TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://registry.npmjs.org" | jq -r '.value')
+          # Fetch OIDC token from GitHub
+          OIDC_TOKEN=$(curl -sS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://registry.npmjs.org" \
+            | jq -r '.value')
 
-          # Exchange OIDC token for npm token
-          NPM_TOKEN=$(curl -sS -X POST "https://registry.npmjs.org/-/npm/v1/security/oidc/token" \
+          # Exchange for npm publish token
+          NPM_TOKEN=$(curl -sS -X POST \
+            "https://registry.npmjs.org/-/npm/v1/security/oidc/token" \
             -H "Content-Type: application/json" \
-            -d "{\"oidcToken\": \"$OIDC_TOKEN\"}" | jq -r '.token')
+            -d "{\"oidcToken\": \"${OIDC_TOKEN}\"}" \
+            | jq -r '.token')
 
-          # Write npm token to .npmrc
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "$HOME/.npmrc"
-          echo "registry=https://registry.npmjs.org/" >> "$HOME/.npmrc"
+          if [ -z "$NPM_TOKEN" ] || [ "$NPM_TOKEN" = "null" ]; then
+            echo "::error::Failed to get npm token via OIDC. Check Trusted Publishing config on npm."
+            echo "Expected: owner=galElmalah, repo=phantomllm, workflow=release.yml, environment=(empty)"
+            exit 1
+          fi
 
-          # Publish
-          npm publish --provenance --access public
+          # Publish with the OIDC-issued token
+          NODE_AUTH_TOKEN="$NPM_TOKEN" npm publish --provenance --access public
