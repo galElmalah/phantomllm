@@ -53,16 +53,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Do NOT use registry-url here — it injects NODE_AUTH_TOKEN which blocks OIDC
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          registry-url: https://registry.npmjs.org
 
       - run: npm ci
       - run: npm run build
 
-      - name: Configure npm registry for OIDC
-        run: echo "registry=https://registry.npmjs.org/" > "$HOME/.npmrc"
+      - name: Fetch OIDC token and publish
+        run: |
+          # Request OIDC token from GitHub
+          OIDC_TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://registry.npmjs.org" | jq -r '.value')
 
-      - name: Publish to npm via Trusted Publishing
-        run: npm publish --provenance --access public
+          # Exchange OIDC token for npm token
+          NPM_TOKEN=$(curl -sS -X POST "https://registry.npmjs.org/-/npm/v1/security/oidc/token" \
+            -H "Content-Type: application/json" \
+            -d "{\"oidcToken\": \"$OIDC_TOKEN\"}" | jq -r '.token')
+
+          # Write npm token to .npmrc
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "$HOME/.npmrc"
+          echo "registry=https://registry.npmjs.org/" >> "$HOME/.npmrc"
+
+          # Publish
+          npm publish --provenance --access public
