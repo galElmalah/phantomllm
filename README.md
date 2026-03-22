@@ -1,9 +1,16 @@
-# mock-llm
+<p align="center">
+  <img src="logo.svg" alt="phantomllm" width="200" />
+</p>
 
-Dockerized mock server for OpenAI-compatible APIs. Test your LLM integrations against a real HTTP server instead of patching `fetch`.
+<h1 align="center">phantomllm</h1>
+
+<p align="center">
+  Dockerized mock server for OpenAI-compatible APIs.<br/>
+  Test your LLM integrations against a real HTTP server instead of patching <code>fetch</code>.
+</p>
 
 ```typescript
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 
 const mock = new MockLLM();
 await mock.start();
@@ -15,7 +22,7 @@ await mock.stop();
 
 ## Table of Contents
 
-- [Why mock-llm?](#why-mock-llm)
+- [Why phantomllm?](#why-phantomllm)
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
 - [Getting the Server URL](#getting-the-server-url)
@@ -43,7 +50,7 @@ await mock.stop();
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
-## Why mock-llm?
+## Why phantomllm?
 
 - **Real HTTP server** — no monkey-patching `fetch` or `http`. Your SDK makes actual network calls through a real TCP connection.
 - **Works with any client** — OpenAI SDK, Vercel AI SDK, LangChain, opencode, Python, curl — anything that speaks the OpenAI API protocol.
@@ -69,7 +76,7 @@ docker info
 ### 1. Install the package
 
 ```bash
-npm install mock-llm --save-dev
+npm install phantomllm --save-dev
 ```
 
 ### 2. Build the Docker image
@@ -81,12 +88,12 @@ The mock server runs inside Docker. You need to build the image once before runn
 npm run docker:build
 ```
 
-This builds a ~170MB Alpine-based image tagged `mock-llm-server:latest`. The image contains only the compiled Fastify server — no dev dependencies.
+This builds a ~170MB Alpine-based image tagged `phantomllm-server:latest`. The image contains only the compiled Fastify server — no dev dependencies.
 
 ### 3. Verify it works
 
 ```typescript
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 
 const mock = new MockLLM();
 await mock.start();
@@ -128,10 +135,10 @@ Most SDK clients expect the URL to end with `/v1`. Use `mock.apiBaseUrl` and you
 The main class. Creates and manages a Docker container running the mock OpenAI server.
 
 ```typescript
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 
 const mock = new MockLLM({
-  image: 'mock-llm-server:latest', // Docker image name (default)
+  image: 'phantomllm-server:latest', // Docker image name (default)
   containerPort: 8080,              // Port inside the container (default)
   reuse: true,                      // Reuse container across runs (default)
   startupTimeout: 30_000,           // Max ms to wait for startup (default)
@@ -286,7 +293,7 @@ When no stub matches a request, the server returns HTTP 418 with a descriptive e
 
 ```typescript
 import OpenAI from 'openai';
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 
 const mock = new MockLLM();
 await mock.start();
@@ -338,7 +345,7 @@ await mock.stop();
 ```typescript
 import { generateText, streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 
 const mock = new MockLLM();
 await mock.start();
@@ -406,7 +413,7 @@ console.log(`Set baseURL to: ${mock.apiBaseUrl}`);
 
 ```typescript
 import { ChatOpenAI } from '@langchain/openai';
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 
 const mock = new MockLLM();
 await mock.start();
@@ -479,7 +486,7 @@ curl http://localhost:55123/v1/chat/completions \
 
 ```typescript
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 import OpenAI from 'openai';
 
 describe('my LLM feature', () => {
@@ -545,7 +552,7 @@ describe('my LLM feature', () => {
 ### Jest
 
 ```typescript
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 import OpenAI from 'openai';
 
 describe('my LLM feature', () => {
@@ -580,14 +587,14 @@ Start one container for your entire test suite. Each test file imports the share
 **`tests/support/mock.ts`**
 
 ```typescript
-import { MockLLM } from 'mock-llm';
+import { MockLLM } from 'phantomllm';
 
 export const mock = new MockLLM();
 
 export async function setup() {
   await mock.start();
   // Make the URL available to other processes if needed
-  process.env.MOCK_LLM_URL = mock.apiBaseUrl;
+  process.env.PHANTOMLLM_URL = mock.apiBaseUrl;
 }
 
 export async function teardown() {
@@ -667,7 +674,7 @@ Benchmarks on Apple Silicon (Docker via OrbStack):
   uses: actions/cache@v4
   with:
     path: /tmp/.buildx-cache
-    key: ${{ runner.os }}-docker-mock-llm-${{ hashFiles('Dockerfile') }}
+    key: ${{ runner.os }}-docker-phantomllm-${{ hashFiles('Dockerfile') }}
 ```
 
 ## Configuration
@@ -676,7 +683,7 @@ Benchmarks on Apple Silicon (Docker via OrbStack):
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `image` | `string` | `'mock-llm-server:latest'` | Docker image to run. |
+| `image` | `string` | `'phantomllm-server:latest'` | Docker image to run. |
 | `containerPort` | `number` | `8080` | Port the server listens on inside the container. |
 | `reuse` | `boolean` | `true` | Reuse a running container across test runs. |
 | `startupTimeout` | `number` | `30000` | Max milliseconds to wait for the container to become healthy. |
@@ -685,7 +692,7 @@ Benchmarks on Apple Silicon (Docker via OrbStack):
 
 | Variable | Description |
 |----------|-------------|
-| `MOCK_LLM_IMAGE` | Override the Docker image name without changing code. Takes precedence over the default but not over the constructor `image` option. |
+| `PHANTOMLLM_IMAGE` | Override the Docker image name without changing code. Takes precedence over the default but not over the constructor `image` option. |
 
 ### OpenAI-Compatible Endpoints
 
@@ -709,7 +716,7 @@ The mock server implements:
 | Connection refused | Wrong URL or container not ready. | Use `mock.apiBaseUrl` for SDK clients. Ensure `start()` has resolved. |
 | Stubs leaking between tests | Stubs persist until cleared. | Call `await mock.clear()` in `beforeEach`. |
 | 418 response | No stub matches the request. | Register a stub matching the model/content, or add a catch-all: `mock.given.chatCompletion.willReturn('...')`. |
-| `MOCK_LLM_IMAGE` env var | Need a custom image. | Set `MOCK_LLM_IMAGE=my-registry/image:tag` in your environment. |
+| `PHANTOMLLM_IMAGE` env var | Need a custom image. | Set `PHANTOMLLM_IMAGE=my-registry/image:tag` in your environment. |
 | Slow CI | Image rebuilt every run. | Cache Docker layers and enable container reuse. |
 | AI SDK uses wrong endpoint | `provider('model')` defaults to Responses API in v3+. | Use `provider.chat('model')` to target `/v1/chat/completions`. |
 

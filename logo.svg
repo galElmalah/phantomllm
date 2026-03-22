@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7b68ee"/>
+      <stop offset="50%" style="stop-color:#9d8df1"/>
+      <stop offset="100%" style="stop-color:#b8a9f5"/>
+    </linearGradient>
+    <linearGradient id="ghostBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8e3ff;stop-opacity:0.95"/>
+      <stop offset="100%" style="stop-color:#c4b5fd;stop-opacity:0.7"/>
+    </linearGradient>
+    <filter id="outerGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+
+  <!-- Subtle grid pattern (circuit/data vibe) -->
+  <g opacity="0.06" stroke="#7b68ee" stroke-width="1" fill="none">
+    <line x1="0" y1="128" x2="512" y2="128"/>
+    <line x1="0" y1="256" x2="512" y2="256"/>
+    <line x1="0" y1="384" x2="512" y2="384"/>
+    <line x1="128" y1="0" x2="128" y2="512"/>
+    <line x1="256" y1="0" x2="256" y2="512"/>
+    <line x1="384" y1="0" x2="384" y2="512"/>
+  </g>
+
+  <!-- Ghost body with wavy bottom -->
+  <g filter="url(#outerGlow)">
+    <path d="
+      M 176 340
+      L 176 200
+      Q 176 130, 256 130
+      Q 336 130, 336 200
+      L 336 340
+      Q 320 310, 304 340
+      Q 288 370, 272 340
+      Q 256 310, 240 340
+      Q 224 370, 208 340
+      Q 192 310, 176 340
+      Z
+    " fill="url(#ghostBody)" opacity="0.9"/>
+  </g>
+
+  <!-- Ghost eyes — terminal cursor style -->
+  <g filter="url(#softGlow)">
+    <!-- Left eye -->
+    <rect x="214" y="205" width="24" height="32" rx="4" fill="#7b68ee"/>
+    <rect x="214" y="205" width="24" height="14" rx="4" fill="#4a3aad" opacity="0.5"/>
+
+    <!-- Right eye -->
+    <rect x="274" y="205" width="24" height="32" rx="4" fill="#7b68ee"/>
+    <rect x="274" y="205" width="24" height="14" rx="4" fill="#4a3aad" opacity="0.5"/>
+  </g>
+
+  <!-- Code brackets on the ghost — < / > -->
+  <g fill="none" stroke="#7b68ee" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7">
+    <!-- < -->
+    <polyline points="220,270 204,282 220,294"/>
+    <!-- / -->
+    <line x1="247" y1="266" x2="265" y2="298"/>
+    <!-- > -->
+    <polyline points="292,270 308,282 292,294"/>
+  </g>
+
+  <!-- Streaming dots (SSE data flow) -->
+  <g fill="#7b68ee" opacity="0.5">
+    <circle cx="370" cy="180" r="5">
+      <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="390" cy="160" r="4">
+      <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.5s" begin="0.3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="405" cy="140" r="3">
+      <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.5s" begin="0.6s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Text: phantomllm -->
+  <text x="256" y="420" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, monospace" font-size="40" font-weight="700" fill="url(#glow)" letter-spacing="2">
+    phantomllm
+  </text>
+
+  <!-- Subtitle -->
+  <text x="256" y="452" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, monospace" font-size="14" fill="#7b68ee" opacity="0.6" letter-spacing="3">
+    MOCK OPENAI API
+  </text>
+</svg>

@@ -1,5 +1,5 @@
 {
-  "name": "mock-llm",
+  "name": "phantomllm",
   "version": "0.1.0",
   "description": "Dockerized mock server for OpenAI-compatible APIs. Test your LLM integrations with a real HTTP server.",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "test:integration": "vitest run --project integration",
     "test:sdk": "vitest run --project sdk",
     "test:bench": "vitest run --project bench",
-    "docker:build": "npm run build:server && docker build -t mock-llm-server:latest .",
+    "docker:build": "npm run build:server && docker build -t phantomllm-server:latest .",
     "prepublishOnly": "npm run build",
     "clean": "rm -rf dist"
   },

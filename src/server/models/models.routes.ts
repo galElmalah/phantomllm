@@ -33,7 +33,7 @@ export const modelsRoutes: FastifyPluginAsync = async (fastify) => {
         id: m.id,
         object: "model" as const,
         created: Math.floor(Date.now() / 1000),
-        owned_by: m.ownedBy ?? "mock-llm",
+        owned_by: m.ownedBy ?? "phantomllm",
       }));
 
       const body: ModelListResponse = { object: "list", data };

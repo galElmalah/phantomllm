@@ -13,7 +13,7 @@ export interface ContainerConfig {
 }
 
 export const DEFAULT_CONFIG: ContainerConfig = {
-  image: 'mock-llm-server:latest',
+  image: 'phantomllm-server:latest',
   containerPort: 8080,
   reuse: true,
   startupTimeout: 30_000,

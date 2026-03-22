@@ -15,7 +15,7 @@ export class ContainerManager {
           .forStatusCode(200),
       )
       .withStartupTimeout(this.config.startupTimeout)
-      .withLabels({ "com.mock-llm": "true" });
+      .withLabels({ "com.phantomllm": "true" });
 
     this.container = await container.start();
 

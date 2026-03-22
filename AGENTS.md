@@ -4,7 +4,7 @@ This file provides general guidance for agents working with code in this reposit
 
 ## Project Overview
 
-mock-llm is a testkit for mocking the OpenAI API in integration tests. It provides a Fastify-based mock server that runs inside Docker, a Testcontainers-based driver class for programmatic control, and ships as an npm package. Built with TypeScript (ESM-first) and tested with Vitest.
+phantomllm is a testkit for mocking the OpenAI API in integration tests. It provides a Fastify-based mock server that runs inside Docker, a Testcontainers-based driver class for programmatic control, and ships as an npm package. Built with TypeScript (ESM-first) and tested with Vitest.
 
 ## Common Commands
 
