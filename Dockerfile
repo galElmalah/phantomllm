@@ -19,8 +19,8 @@ RUN addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
-COPY docker/package.json docker/package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts
+COPY docker/package.json ./
+RUN npm install --omit=dev --ignore-scripts
 
 COPY --from=builder /app/dist/server-build/ ./dist/
 
