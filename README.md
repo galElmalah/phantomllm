@@ -28,6 +28,7 @@ await mock.stop();
 - [API Reference](#api-reference)
   - [MockLLM](#mockllm)
   - [Chat Completions](#chat-completions)
+  - [Responses API](#responses-api)
   - [Streaming](#streaming)
   - [Embeddings](#embeddings)
   - [Error Simulation](#error-simulation)
@@ -54,6 +55,7 @@ await mock.stop();
 - **Real HTTP server** — no monkey-patching `fetch` or `http`. Your SDK makes actual network calls.
 - **Zero config** — `npm install phantomllm` and go. No Docker, no external services, no setup steps.
 - **Works with any client** — OpenAI SDK, Vercel AI SDK, LangChain, opencode, Python, curl.
+- **Responses API** — supports both `/v1/chat/completions` and `/v1/responses` (used by Vercel AI SDK, opencode, and newer OpenAI clients).
 - **Streaming support** — SSE chunked responses work exactly like the real OpenAI API.
 - **Fast** — in-process Fastify server, sub-millisecond response latency.
 - **Simple API** — fluent `given`/`expect` pattern: `mock.given.chatCompletion.forModel('gpt-4').willReturn('Hello')`.
@@ -159,6 +161,68 @@ mock.given.chatCompletion
 | `.forModel(model)` | Only match requests with this exact model name. |
 | `.withMessageContaining(text)` | Only match when any user message contains this substring (case-insensitive). |
 | `.willReturn(content)` | Return a `chat.completion` response with this content. |
+
+### Responses API
+
+Stub `POST /v1/responses` — the newer OpenAI Responses API used by `@ai-sdk/openai`, opencode, and recent versions of the OpenAI SDK.
+
+```typescript
+// Stubs are shared — chatCompletion stubs automatically work with /v1/responses
+mock.given.chatCompletion.willReturn('Works on both endpoints!');
+
+// Or use the dedicated response builder
+mock.given.response
+  .forModel('gpt-4o')
+  .willReturn('Hello from responses!');
+
+// Match by input content (case-insensitive substring)
+mock.given.response
+  .withInputContaining('weather')
+  .willReturn('Sunny, 72F.');
+```
+
+The input field accepts a plain string or an array of messages:
+
+```typescript
+// String input
+const response = await client.responses.create({
+  model: 'gpt-4o',
+  input: 'Hello',
+});
+
+// Array input
+const response = await client.responses.create({
+  model: 'gpt-4o',
+  input: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+Streaming works with the Responses API event format (`response.output_text.delta`, etc.):
+
+```typescript
+mock.given.response.willStream(['Hello', ' world']);
+
+const stream = await client.responses.create({
+  model: 'gpt-4o',
+  input: 'Hi',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+| Method | Description |
+|---|---|
+| `.forModel(model)` | Only match requests with this exact model name. |
+| `.withInputContaining(text)` | Only match when the input contains this substring (case-insensitive). |
+| `.willReturn(content)` | Return a `response` object with this content. |
+| `.willStream(chunks)` | Return a streamed response with proper Responses API SSE events. |
+
+> **Note:** `given.chatCompletion` and `given.response` stubs are interchangeable — both match requests on either endpoint.
 
 ### Streaming
 
@@ -659,7 +723,7 @@ The mock server runs in-process using Fastify — no Docker overhead:
 | `ServerNotStartedError` | Using `baseUrl`, `given`, or `clear()` before `start()`. | Call `await mock.start()` first. |
 | Stubs leaking between tests | Stubs persist until cleared. | Call `await mock.clear()` in `beforeEach`. |
 | 418 response | No stub matches the request. | Register a stub matching the model/content, or add a catch-all: `mock.given.chatCompletion.willReturn('...')`. |
-| AI SDK uses wrong endpoint | `provider('model')` defaults to Responses API in v3+. | Use `provider.chat('model')` to target `/v1/chat/completions`. |
+| AI SDK uses Responses API | `provider('model')` defaults to `/v1/responses` in v3+. | Both endpoints are supported. Use `provider.chat('model')` if you specifically need `/v1/chat/completions`. |
 
 ## License
 

@@ -8,4 +8,6 @@ export type {
   ChatCompletionChunk,
   EmbeddingRequest,
   EmbeddingResponse,
+  ResponseRequest,
+  ResponseObject,
 } from "./types/openai.js";

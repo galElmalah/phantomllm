@@ -97,3 +97,73 @@ export interface OpenAIErrorBody {
     code: string | null;
   };
 }
+
+// ── Responses API ──────────────────────────────────────────────
+
+export interface ResponseInputMessage {
+  role: 'system' | 'user' | 'assistant' | 'developer';
+  content: string;
+  type?: 'message';
+}
+
+export interface ResponseRequest {
+  model: string;
+  input: string | ResponseInputMessage[];
+  instructions?: string | null;
+  stream?: boolean;
+  temperature?: number;
+  top_p?: number;
+  max_output_tokens?: number;
+  metadata?: Record<string, string>;
+  store?: boolean;
+  previous_response_id?: string | null;
+}
+
+export interface ResponseOutputText {
+  type: 'output_text';
+  text: string;
+  annotations: unknown[];
+}
+
+export interface ResponseOutputMessage {
+  id: string;
+  type: 'message';
+  role: 'assistant';
+  status: 'completed';
+  content: ResponseOutputText[];
+}
+
+export interface ResponseUsage {
+  input_tokens: number;
+  input_tokens_details: { cached_tokens: number };
+  output_tokens: number;
+  output_tokens_details: { reasoning_tokens: number };
+  total_tokens: number;
+}
+
+export interface ResponseObject {
+  id: string;
+  object: 'response';
+  created_at: number;
+  status: 'completed' | 'in_progress' | 'failed' | 'incomplete';
+  model: string;
+  output: ResponseOutputMessage[];
+  output_text: string;
+  error: null;
+  incomplete_details: null;
+  instructions: string | null;
+  metadata: Record<string, string>;
+  parallel_tool_calls: boolean;
+  temperature: number | null;
+  top_p: number | null;
+  max_output_tokens: number | null;
+  previous_response_id: string | null;
+  reasoning: null;
+  text: null;
+  truncation: null;
+  tool_choice: string;
+  tools: unknown[];
+  usage: ResponseUsage | null;
+  user: null;
+  service_tier: null;
+}

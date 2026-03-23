@@ -5,6 +5,7 @@ import { adminRoutes } from "./admin/admin.routes.js";
 import { chatRoutes } from "./chat/chat.routes.js";
 import { embeddingsRoutes } from "./embeddings/embeddings.routes.js";
 import { modelsRoutes } from "./models/models.routes.js";
+import { responsesRoutes } from "./responses/responses.routes.js";
 
 export async function buildApp(
   opts: Record<string, unknown> = {},
@@ -15,6 +16,7 @@ export async function buildApp(
   await app.register(apiKeyAuthPlugin);
   await app.register(adminRoutes);
   await app.register(chatRoutes, { prefix: "/v1" });
+  await app.register(responsesRoutes, { prefix: "/v1" });
   await app.register(embeddingsRoutes, { prefix: "/v1" });
   await app.register(modelsRoutes, { prefix: "/v1" });
 
